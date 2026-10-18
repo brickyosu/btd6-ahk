@@ -4,6 +4,8 @@ defeats := 0
 
 currentRound := 0
 currentMap := [0, 0]
+pageCountWarned := false
+lastProgress := A_TickCount
 mouseRest := [30, 1]
 defeated := false
 toweropen := ""

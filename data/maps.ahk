@@ -116,22 +116,31 @@ global MAPS := [
     ],
 
     ; Page 13 - Expert
+    ; The game has a new expert map somewhere in the first six expert slots that
+    ; this script has no strategy for. Its exact slot still needs to be confirmed
+    ; in game, it is assumed to be the last one on the page ("Unknown" is never
+    ; selected).
     [
         ["Glacial Trail", GLACIAL_TRAIL_DATA],
         ["Dark Dungeons", DARK_DUNGEONS_DATA],
         ["Sanctuary", SANCTUARY_DATA],
         ["Ravine", RAVINE_DATA],
         ["Flooded Valley", FLOODED_VALLEY_DATA],
-        ["Infernal", INFERNAL_DATA]
+        ["Unknown", Map()]
     ],
 
     ; Page 14 - Expert
     [
+        ["Infernal", INFERNAL_DATA],
         ["Bloody Puddles", BLOODY_PUDDLES_DATA],
         ["Workshop", WORKSHOP_DATA],
         ["Quad", QUAD_DATA],
         ["Dark Castle", DARK_CASTLE_DATA],
-        ["Muddy Puddles", MUDDY_PUDDLES_DATA],
+        ["Muddy Puddles", MUDDY_PUDDLES_DATA]
+    ],
+
+    ; Page 15 - Expert
+    [
         ["#Ouch", OUCH_DATA]
     ]
 ]
@@ -140,9 +149,48 @@ global ALL_MAPS := []
 global MAP_LOCATIONS := Map()
 for pageNumber, page in MAPS {
     for mapNumber, mapData in page {
+        if mapData[1] == "Unknown" {
+            continue    ; placeholder for a map without a strategy
+        }
         name := StrReplace(StrLower(mapData[1]), " ", "_")
         name := StrReplace(StrReplace(name, "'"), "#")
         MAP_LOCATIONS[name] := [pageNumber, mapNumber]
         ALL_MAPS.Push([pageNumber, mapNumber])
     }
+}
+
+
+; The page numbers used everywhere in the script are positions in MAPS. The game
+; has since added maps and shows more pages than MAPS has (a page of maps without
+; a strategy has no MAPS page and is never selected: Three Mines 'Round, Lost
+; Crevasse, Party Parade, Mushroom Grotto). Each category is therefore mapped to
+; the page where it starts in the game's page indicator.
+;
+; Update this when Ninja Kiwi adds or removes pages:
+; [first MAPS page, last MAPS page, first game page of the category]
+global MAPS_CATEGORIES := [
+    [1, 4, 1],      ; Beginner     - game pages 1-5
+    [5, 8, 6],      ; Intermediate - game pages 6-10
+    [9, 12, 11],    ; Advanced     - game pages 11-14
+    [13, 15, 15]    ; Expert       - game pages 15-17
+]
+global GAME_PAGE_COUNT := 17
+
+MapPageToGamePage(page) {
+    for category in MAPS_CATEGORIES {
+        if page >= category[1] and page <= category[2] {
+            return category[3] + page - category[1]
+        }
+    }
+}
+
+; Returns 0 for game pages that have no matching page in MAPS
+GamePageToMapPage(gamePage) {
+    for category in MAPS_CATEGORIES {
+        offset := gamePage - category[3]
+        if offset >= 0 and category[1] + offset <= category[2] {
+            return category[1] + offset
+        }
+    }
+    return 0
 }

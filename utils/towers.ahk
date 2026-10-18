@@ -16,6 +16,9 @@ Place(tower, asap := false) {
             if SearchImage("buttons\close_place", "", 1570, 85, 1635, 150) {
                 break
             }
+            if CheckStalled("placing " tower) {
+                break
+            }
             if CheckDefeat() or SearchImage("states\victory") {
                 global defeated := true
                 LogMsg('Found defeat when placing ' tower '')
@@ -34,6 +37,7 @@ Place(tower, asap := false) {
     Sleep(100)
     Click(x,y)          ; Place Tower
     Sleep(200)
+    MarkProgress()
 }
 
 Targeting(tower, tabCount, option := false) {
@@ -164,6 +168,7 @@ Close() {
         Sleep(100)
         MouseMove(mouseRest[1], mouseRest[2])
         Sleep(100)
+    MarkProgress()
     LogMsg("Close() complete", true)
 }
 

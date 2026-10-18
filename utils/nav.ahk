@@ -32,13 +32,20 @@ HomeMenu() {
 }
 
 CheckMenuState() {
+    static unrecognized := 0
     for state in states {
         if SearchImage("states\" state) {
+            unrecognized := 0
             LogMsg(state)
             return state
         }
     }
+    unrecognized += 1
     LogMsg("Menu state not recognized")
+    if unrecognized >= 30 {
+        LogMsg("Menu state not recognized for 5 minutes, stopping the script")
+        Reload()
+    }
     Sleep(10000)
 }
 
@@ -63,8 +70,9 @@ CheckSettings() {
 }
 
 InGame() {
+    MarkProgress()
     ClickImage("buttons\ok", 1000, "*Trans0xFF00FF", 900, 720, 1000, 790)
-    
+
     if changeSettings {
         CheckSettings()
     }

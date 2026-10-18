@@ -30,7 +30,14 @@ SelectRandomMap() {
         Case "advanced":
             SelectMap(9, Random(1, 19))
         Case "expert":
-            SelectMap(13, Random(1, 12))
+            candidates := []
+            for location in ALL_MAPS {
+                if location[1] >= 13 {
+                    candidates.Push(location)
+                }
+            }
+            randomMap := candidates[Random(1, candidates.Length)]
+            SelectMap(randomMap[1], randomMap[2])
         Default:
             randomMap := ALL_MAPS[Random(1, ALL_MAPS.Length)]
             SelectMap(randomMap[1], randomMap[2])
@@ -41,6 +48,9 @@ SelectEventMap() {
     Loop {
         ClickImage("buttons\" mapCategory)
         currentMap[1] := GetCurrentMapPage()
+        if !currentMap[1] {
+            continue    ; unrecognized page, or a page without map strategies
+        }
         Loop 6 {
             if ClickImage("events\" mapSelect "\" A_Index - 1) {
                 currentMap[2] := A_Index
@@ -53,7 +63,13 @@ SelectEventMap() {
 SelectMap(page, number) {
     page := page + (number - 1) // 6
     number := Mod(number - 1, 6) + 1
+    attempts := 0
     While GetCurrentMapPage() != page {
+        attempts += 1
+        if attempts > 25 {
+            LogMsg("Script stopped because map page " page " could not be reached")
+            Reload()
+        }
         Switch page {
             Case 1,2,3,4:
                 ClickImage("buttons\beginner")
@@ -61,7 +77,7 @@ SelectMap(page, number) {
                 ClickImage("buttons\intermediate")
             Case 9,10,11,12:
                 ClickImage("buttons\advanced")
-            Case 13,14:
+            Case 13,14,15:
                 ClickImage("buttons\expert")
         }
     }

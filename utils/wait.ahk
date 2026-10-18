@@ -1,4 +1,33 @@
-; UpdateMouseRest() changes the mouse cursor location to the  
+; --- Stall watchdog --------------------------------------------------------------
+; The loops that wait for the game only end when they recognize what they wait
+; for, or a defeat/victory screen. If the game ends on a screen that isn't
+; recognized they would loop forever (resending keys). Progress is a new round, a
+; placed tower or a finished upgrade. Without progress for STALL_TIMEOUT the game
+; is considered stuck.
+STALL_TIMEOUT := 5 * 60 * 1000
+
+MarkProgress() {
+    global lastProgress := A_TickCount
+}
+
+; Returns true if the game has been stuck for too long and the caller should stop
+; waiting. Tries to get back to the menu, the main loop takes over from there.
+CheckStalled(where) {
+    if A_TickCount - lastProgress < STALL_TIMEOUT {
+        return false
+    }
+    LogMsg("No progress for " STALL_TIMEOUT // 60000 " minutes while " where " (round " currentRound "), giving up on this game")
+    if SearchImage("states\defeat") {
+        LogMsg("The defeat screen is visible at x=" x ", y=" y " but CheckDefeat() did not find it there")
+    }
+    global defeated := true
+    global lastProgress := A_TickCount
+    ClickImage("buttons\home_defeat_1", 2000)
+    ClickImage("buttons\home_defeat_2", 2000)
+    return true
+}
+
+; UpdateMouseRest() changes the mouse cursor location to the
 ; midpoint of one or more towers
 UpdateMouseRest(towers*) {
     xSum := 0
@@ -112,6 +141,9 @@ WaitForRound(round, delay := 0) {
             Sleep(delay)
             break
         }
+        if CheckStalled("waiting for round " round) {
+            break
+        }
         if defeated or CheckDefeat() {
             global defeated := true
             LogMsg('Found defeat on R' currentRound ' when waiting for R' round '')
@@ -152,6 +184,9 @@ WaitForVictoryOrDefeat() {
         CheckLevelUp()
         CheckInGameMsg()
         UpdateRound()
+        if CheckStalled("waiting for the game to end") {
+            break
+        }
         Sleep(2000)
     }
 }
@@ -167,6 +202,9 @@ WaitForUpgrade(path) {
     }
     Loop {
         if SearchUpgrade(path) {
+            break
+        }
+        if CheckStalled("waiting for upgrade " path) {
             break
         }
         if CheckDefeat() {
@@ -194,6 +232,9 @@ WaitForAbility(tower, ability, position, delay := 0) {
             break
         }
         if defeated {
+            break
+        }
+        if CheckStalled("waiting for ability " ability) {
             break
         }
         if CheckDefeat() {
@@ -226,6 +267,7 @@ UpdateRound() {
                 " | updatedRound: " updatedRound " | loopcnt: " A_Index)
             }
             global currentRound := updatedRound
+            MarkProgress()
             break
         }
     }
